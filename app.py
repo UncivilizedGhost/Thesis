@@ -34,6 +34,9 @@ client = OpenAIChatCompletionClient(  #Main client
         structured_output=True
     )
 )
+
+
+
 #TODO Make out commented out clients that use different models for easy testing later
 
 
@@ -65,6 +68,7 @@ validator_agent = AssistantAgent(
 
 async def validated_input(prompt: str, rules: str) -> str:
     """Checks Input() before sending to LLM. Repeats if invalid"""
+    return input(prompt).strip()  ### DEBUGGING — bypasses validation ###ONLY FOR DEBUGGIND
     max_retries = 5
     for i in range(5):
         raw = input(prompt).strip()
@@ -147,7 +151,7 @@ planning_agent = AssistantAgent(
     1. Call get_additive_manufacturing_equipment() with no arguments.
     2. Build a step-by-step plan based on available equipment.
     3. You MUST output ONLY valid JSON. Do not include markdown formatting, conversational text, or code blocks.
-    4. IMPORTANT: All 'duration_hours' MUST be whole numbers (integers). Do not add decimals or buffer time (e.g., use 2, not 2.1).
+    4. IMPORTANT: All 'duration_hours' for items that require booking MUST be whole numbers (integers). Do not add decimals or buffer time (e.g., use 2, not 2.1).
     Format your response exactly as a JSON array of objects:
     [
       {
@@ -274,34 +278,40 @@ def parse_slot_result(slot_result: str) -> tuple[str, str, str] | None:
     return None
 
 def rebuild_plan_text(steps: list[dict]) -> str:
-    """Rebuild plan after editing it."""
     lines = []
     for s in steps:
-        booking = "Yes" if s.get('requires_booking') else "No"
+        step     = s.get('step','')
+        tool     = s.get('tool','')
+        action   = s.get('action','')
+        duration = s.get('duration_hours', 0)
+        booking  = "Yes" if s.get('requires_booking') else "No"
+
         lines.append(
-            f"{s['step']}: {s['tool']} - Use {s['tool']} - "
-            f"Duration: {s['duration_hours']}h - Booking required: {booking}"
+            f"{step}: {tool}\n{action}\n"
+            f"Duration: {duration}h - Booking required: {booking}\n"
         )
 
-    plan="\n".join(lines)
-
-    return plan
-
+    return "\n".join(lines)
 async def format_plan_with_cost(steps: list[dict]) -> str:
-    """Human-readable plan"""
     lines = []
-
     total = 0
-    
     db = await get_additive_manufacturing_equipment()
-    
+
     for s in steps:
-        hourly   = get_tool_cost(s['tool'], db)
-        cost_str = f"@ €{hourly}/h = €{s['cost']}" if s['cost'] > 0 else "(free)"
-        booking  = " [BOOKING REQUIRED]" if s.get('requires_booking') else ""
-        lines.append(f"  {s['step']}: {s['tool']} — {s['duration_hours']}h {cost_str}{booking}")
-        total += s['cost']
-        
+        tool     = s.get('tool', '')
+        step     = s.get('step', '')
+        duration = s.get('duration_hours', 0)
+        cost     = s.get('cost', 0)
+        action   = s.get('action', '')
+
+        hourly     = get_tool_cost(tool, db)
+        cost_str   = f"@ €{hourly}/h = €{cost}" if cost > 0 else "(free)"
+        booking    = " [BOOKING REQUIRED]" if s.get('requires_booking') else ""
+        action_str = f" {action}" if action else ""
+
+        lines.append(f"  {step}: {tool} — {duration}h {cost_str}{booking}\n{action_str}\n")
+        total += cost
+
     lines.append(f"\n  Total cost: €{total}")
     return "\n".join(lines)
 
@@ -351,7 +361,7 @@ async def planning_phase(user_request: str) -> tuple[str, list[dict], int]:
                 task = f"{user_request} — please provide a detailed step-by-step plan. You MUST format output as JSON."
                 continue
         else:
-            attempts = 0  # FIX: reset counter once we have a valid plan
+            attempts = 0 
             total_cost = sum(s['cost'] for s in steps)
 
         print("PROPOSED PLAN:")
@@ -381,9 +391,9 @@ async def planning_phase(user_request: str) -> tuple[str, list[dict], int]:
             try:
                 idx     = int(input("Step number to edit: ").strip()) - 1
                 new_dur = int(input(f"New duration for '{steps[idx]['tool']}' (hours): ").strip())
-                if new_dur < 1:
-                    print("Duration must be at least 1 hour.")
-                    continue
+                # if new_dur < 1:
+                #     print("Duration must be at least 1 hour.")
+                #     continue
                 steps[idx]['duration_hours'] = new_dur
 
                 steps[idx]['cost'] = get_tool_cost(steps[idx]['tool'], db) * new_dur
