@@ -17,6 +17,7 @@ from tools import (
     list_excel_files,
     read_log_files,
     write_session_log,
+    add_equipment
 )
 
 load_dotenv()
@@ -108,14 +109,15 @@ async def validated_input(prompt: str, rules: str) -> str:
 admin_agent = AssistantAgent(
     name="admin_agent",
     model_client=client,
-    tools=[list_excel_files, get_timetable, clear_worksheet, read_log_files],
+    tools=[list_excel_files, get_timetable, clear_worksheet, read_log_files,add_equipment],
     system_message="""
     You are an admin assistant for a manufacturing lab.
     Handle these requests:
-    - "show files" / "what sheets" → call list_excel_files
-    - "show timetable / schedule for X" → call list_excel_files first, then get_timetable
-    - "clear sheet X" → confirm then call clear_worksheet
-    - "show logs / summarize logs" → call read_log_files and summarize clearly
+    - "show files" / "what sheets" - call list_excel_files
+    - "show timetable / schedule for X" - call list_excel_files first, then get_timetable
+    - "clear sheet X" - confirm then call clear_worksheet
+    - "show logs / summarize logs" - call read_log_files and summarize clearly
+    - add equpment - calls add_equipment (asks user if are parementers are not given)
 
     Always confirm before clearing. Be concise.
     """,

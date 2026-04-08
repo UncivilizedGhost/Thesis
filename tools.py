@@ -2,9 +2,9 @@ import pandas as pd
 import os
 import glob
 import hashlib
-from openpyxl import load_workbook
-from datetime import datetime
-
+from openpyxl import load_workbook,Workbook
+from datetime import datetime,time
+import json
  
 
 # Auth
@@ -137,34 +137,80 @@ async def get_additive_manufacturing_equipment() -> dict:
         cost is € per hour. requires_booking is a bool.
     """
 
-    db = {
-        'printers': [
-            {'name': 'FDM 3D Printer',         'description': 'Extrudes thermoplastics layer by layer.',       'requires_booking': True,  'cost': 10},
-            {'name': 'SLA 3D Printer',          'description': 'UV laser cures liquid resin into solid parts.', 'requires_booking': True,  'cost': 15},
-            {'name': 'Metal 3D Printer (DMLS)', 'description': 'Laser sinters metal powder for metal parts.',   'requires_booking': True,  'cost': 50},
-        ],
-        'design': [
-            {'name': 'SolidWorks',   'description': 'Parametric 3D CAD software.',       'requires_booking': False, 'cost': 0},
-            {'name': 'Fusion 360',   'description': 'Cloud-based CAD/CAM platform.',      'requires_booking': False, 'cost': 0},
-            {'name': 'AutoCAD',      'description': '2D and 3D drafting software.',       'requires_booking': False, 'cost': 0},
-            {'name': 'Cura',         'description': 'Slicing software, exports G-code.',  'requires_booking': False, 'cost': 0},
-            {'name': 'PrusaSlicer',  'description': 'Advanced slicing software.',         'requires_booking': False, 'cost': 0},
-            {'name': 'PreForm',      'description': 'Formlabs SLA preparation software.', 'requires_booking': False, 'cost': 0},
-        ],
-        'post_processing': [
-            {'name': 'Support Removal Tools',    'description': 'Pliers and snips for supports.', 'requires_booking': False, 'cost': 0},
-            {'name': 'Sanding & Polishing Tools','description': 'Surface finishing tools.',        'requires_booking': False, 'cost': 0},
-            {'name': 'UV Curing Station',        'description': 'Post-cures resin prints.',        'requires_booking': True,  'cost': 5},
-            {'name': 'Paints and Coating',       'description': 'Airbrush and spray finishing.',   'requires_booking': False, 'cost': 0},
-        ],
-        'quality': [
-            {'name': 'Calipers',                 'description': 'Dimensional measurement.',      'requires_booking': False, 'cost': 0},
-            {'name': 'Micrometers',              'description': 'High-precision measurement.',    'requires_booking': False, 'cost': 0},
-            {'name': '3D Scanner',               'description': 'Geometry verification.',         'requires_booking': True,  'cost': 5},
-            {'name': 'Surface Roughness Tester', 'description': 'Surface quality measurement.',   'requires_booking': True, 'cost': 0},
-        ],
-    }
+    with open("equipment.json", "r") as f:
+        db = json.load(f)
     return db
+
+
+
+async def add_equipment(category: str,name: str,description: str,booking: bool,cost: int) -> dict:
+    """
+    Adds new additive manufacturing equipment to dictionary of additive manifacturing equipment and creates file for booking
+    Parameters
+    ----------
+    category : str
+    name : str
+    description : str
+    booking: bool
+    cost: int
+    Returns
+    -------
+    dict
+        Categories mapped to lists of {name, description, requires_booking, cost}.
+        cost is € per hour. requires_booking is a bool.
+    """
+
+    item= {
+    'name': name,
+    'description': description,
+    'requires_booking': booking,
+    'cost': cost
+    }
+    db= await get_additive_manufacturing_equipment()
+
+    if (category not in db):
+        wb = Workbook()
+        wb.save(f"{category}.xlsx")
+        db[category]=[]
+
+    db[category].append(item)
+    with open("equipment.json", "w") as f:
+        json.dump(db, f, indent=4)
+
+
+    if booking:
+        print(booking)
+        wb = load_workbook(filename = f"{category}.xlsx")
+        wb.create_sheet(name)
+        sheet=wb[name]
+
+        sheet["A1"] = "Time"
+        for day in DAY_COL:
+            sheet[f"{DAY_COL[day]}1"] = day.capitalize()
+            hour=6
+        for i in range(2,19):
+            sheet[f"A{i}"] = time(hour,0,0)
+            hour+=1
+        try:
+            del wb['Sheet']
+        except:
+            pass
+        wb.save(f"{category}.xlsx")
+        
+
+
+
+    return db
+
+
+
+
+
+
+
+
+
+    
 
 # Booking 
 
@@ -369,3 +415,12 @@ def write_session_log(
         f.write("\n".join(lines))
 
     return filename
+
+import asyncio
+
+# async def main():
+
+#     await add_equipment('testa','best','testa',True,100)
+
+
+# asyncio.run(main())
