@@ -125,7 +125,7 @@ async def read_log_files() -> str:
 
 # Equipment 
 
-async def get_additive_manufacturing_equipment() -> dict:
+async def get_equipment() -> dict:
     """
     Retrieve additive manufacturing equipment with booking requirements and hourly cost.
 
@@ -179,12 +179,12 @@ async def add_equipment(category: str,name: str,description: str,booking: bool,c
     """
 
     item= {
-    'name': name,
-    'description': description,
-    'requires_booking': booking,
-    'cost': cost
+    "name": name,
+    "description": description,
+    "requires_booking": booking,
+    "cost": cost
     }
-    db= await get_additive_manufacturing_equipment()
+    db= await get_equipment()
 
     if (category not in db):
         wb = Workbook()
@@ -196,7 +196,7 @@ async def add_equipment(category: str,name: str,description: str,booking: bool,c
         json.dump(db, f, indent=4)
 
 
-    add_booking(category,name)
+    await add_booking_option(category,name)
 
         
 
@@ -204,8 +204,13 @@ async def add_equipment(category: str,name: str,description: str,booking: bool,c
 
 
 
-async def add_booking(category,name):
-    print(booking)
+async def add_booking_option(category: str,name: str):
+    """
+    Creates timetable for iteam that now requires booking
+    ----------
+    category : str
+    name : str
+    """
     wb = load_workbook(filename = f"{category}.xlsx")
     wb.create_sheet(name)
     sheet=wb[name]
@@ -218,7 +223,7 @@ async def add_booking(category,name):
         sheet[f"A{i}"] = time(hour,0,0)
         hour+=1
     try:
-        del wb['Sheet']
+        del wb["Sheet"]
     except:
         pass
     wb.save(f"{category}.xlsx")
@@ -262,8 +267,6 @@ async def get_available_slots(
         All free slots, one per line: "<day> <HH:00>-<HH:00>"
         Or "NO_SLOTS_AVAILABLE" if none found.
     """
-    print(f"[DEBUG] get_available_slots: file='{file_name}' sheet='{sheet_name}' duration={duration_hours}h")
-
 
     try:
         wb = load_workbook(file_name, read_only=True)
@@ -289,7 +292,7 @@ async def get_available_slots(
                 row = hour - 4
                 cell_val = ws[f"{col}{row}"].value
                 
-                # If cell is not empy, it's booked
+                # If cell is not empy, it"s booked
                 if cell_val is not None and str(cell_val).strip() != "":
                     all_free = False
                     break
@@ -324,7 +327,7 @@ async def add_booking(
     Parameters
     ----------
     day : str
-        Lowercase day name (e.g. 'monday').
+        Lowercase day name (e.g. "monday").
     start_time : str
         Start hour in HH:00 format (e.g. "18:00").
     end_time : str
@@ -342,7 +345,7 @@ async def add_booking(
         "Success" or an error message.
     """
     if day not in DAY_COL:
-        msg = f"Invalid day: '{day}'. Choose from: {', '.join(DAY_COL)}"
+        msg = f"Invalid day: '{day}'. Choose from: {", ".join(DAY_COL)}"
 
         return msg
 
@@ -362,7 +365,7 @@ async def add_booking(
         row  = hour - 4
         cell = ws[f"{col}{row}"]
         if cell.value not in (None, ""):
-            msg = f"Slot {day} {hour:02d}:00 already booked by '{cell.value}'. No changes made."
+            msg = f"Slot {day} {hour:02d}:00 already booked by '{cell.value}''. No changes made."
             return msg
 
     # Write username into every hour in the range
@@ -407,11 +410,11 @@ def write_session_log(
 
     if bookings:
             for b in bookings:
-                tool   = b.get('tool', 'Unknown Tool')
-                day    = b.get('day', '?')
-                start  = b.get('start_time', '?')
-                end    = b.get('end_time', '?')
-                status = b.get('status', '?')
+                tool   = b.get("tool", "Unknown Tool")
+                day    = b.get("day", "?")
+                start  = b.get("start_time", "?")
+                end    = b.get("end_time", "?")
+                status = b.get("status", "?")
                 
                 log_entry = f"  {tool}: {day} {start}-{end} [{status}]"
                 lines.append(log_entry)
@@ -436,10 +439,10 @@ def write_session_log(
 
 import asyncio
 
-async def main():
-    await change_equpment( await get_additive_manufacturing_equipment())
+# async def main():
+#     await change_equpment( await get_additive_manufacturing_equipment())
 
-#     await add_equipment('testa','best','testa',True,100)
+#     await add_equipment("testa","best","testa",True,100)
 
 
 # asyncio.run(main())

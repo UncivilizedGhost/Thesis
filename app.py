@@ -26,6 +26,20 @@ client = OpenAIChatCompletionClient(  #Main client
 )
 
 
+# client = OpenAIChatCompletionClient(  
+#     model="gpt-5.4",
+#     api_key=os.environ['OPEN_API_KEY'], 
+#     model_info=ModelInfo(
+#         vision=False,
+#         function_calling=True,
+#         json_output=True,
+#         family="gpt-5.4",
+#         structured_output=False 
+#     )
+# )
+
+
+
 
 #TODO Make out commented out clients that use different models for easy testing later
 
@@ -58,7 +72,7 @@ validator_agent = AssistantAgent(
 
 async def validated_input(prompt: str, rules: str) -> str:
     """Checks Input() before sending to LLM. Repeats if invalid"""
-    return input(prompt).strip()  ### DEBUGGING — bypasses validation ###ONLY FOR DEBUGGIND
+   # return input(prompt).strip()  ###  bypasses for debugging
     max_retries = 5
     for i in range(5):
         raw = input(prompt).strip()
@@ -98,19 +112,26 @@ async def validated_input(prompt: str, rules: str) -> str:
 admin_agent = AssistantAgent(
     name="admin_agent",
     model_client=client,
-    tools=[list_excel_files, get_timetable, clear_worksheet, read_log_files,add_equipment,get_additive_manufacturing_equipment,change_equpment],
+    tools=[list_excel_files, get_timetable, clear_worksheet, read_log_files,add_equipment,get_equipment,change_equpment,add_booking_option],
     system_message="""
-    You are an admin assistant for a manufacturing lab.
-    Handle these requests:
-    - "show files" / "what sheets" - call list_excel_files
-    - "show timetable / schedule for X" - call list_excel_files first, then get_timetable
-    - "clear sheet X" - confirm then call clear_worksheet
-    - "show logs / summarize logs" - call read_log_files and summarize clearly
-    - "add equpment" - calls add_equipment (asks user if are parementers are not given)
-    - "change x / make x" - calls get_additive_manufacturing_equipment then makes changes to the dicitonary and calls change_equpment to save them. It does it all at once 
-    - If you are getting ready to make changes repsond with a list of chanages and ask for confirmation
-    
-    Always confirm before clearing. Be concise.
+    You are an admin assistant for a manufacturing lab. 
+    Always be concise and clear.
+     Ask the user for missing information when needed. 
+     For equipment tasks, always start by calling get_equipment() with no arguments.
+    If the user says "add equipment", call add_equipment and ask for any missing parameters first. 
+    If the user says "change X" or "make X", call get_equipment, prepare all changes to the dictionary, 
+    present a clear list of proposed changes, ask for confirmation, 
+    and once confirmed call change_equipment with all updates at once. 
+    If an item is changed and now requires booking, call add_booking_option with the equipment category and name.
+    If changing an item's category, check if the new category requires booking and call add_booking_option if needed.
+    If the user says "show files" or "what sheets", call list_excel_files. 
+    If the user asks for a timetable or schedule for X, first call list_excel_files, then call get_timetable. 
+    If the user says "clear sheet X", ask for confirmation and only proceed to call clear_worksheet after confirmation.
+    If the user says "show logs" or "summarize logs", call read_log_files and provide a clear summary. A
+    any questions related to equipment or operations should be answered by checking the logs when possible. 
+    Always confirm before making destructive or significant changes.
+
+    Ignore irrevant requests
     """,
     reflect_on_tool_use=True,
     model_client_stream=False,
@@ -121,11 +142,7 @@ async def run_admin_session() -> None:
     print(f"You can ask the agent to check excel files and the timetable.\n The agent can also clear the timetable and read the logs to answer questions abot them")
     print("Type EXIT to quit.\n")
     while True:
-        #user_input = input("Admin> ").strip()
-        user_input = await validated_input(
-            prompt="Admin> ",
-            rules="must be related to administration, such as checking timetables, clearing sheets, quesitons related to logs. Reject anything unrelated."
-        )
+        user_input = input("Admin> ").strip()
         if user_input.upper() == "EXIT":
             break
         response = await run_agent(admin_agent, user_input)
@@ -137,11 +154,11 @@ async def run_admin_session() -> None:
 planning_agent = AssistantAgent(
     name="planning_agent",
     model_client=client,
-    tools=[get_additive_manufacturing_equipment],
+    tools=[get_equipment],
     system_message="""
     You are a manufacturing planner.
 
-    1. Call get_additive_manufacturing_equipment() with no arguments.
+    1. Call get_equipment() with no arguments.
     2. Build a step-by-step plan based on available equipment.
     3. You MUST output ONLY valid JSON. Do not include markdown formatting, conversational text, or code blocks.
     4. IMPORTANT: All 'duration_hours' for items that require booking MUST be whole numbers (integers). Do not add decimals or buffer time (e.g., use 2, not 2.1).
@@ -161,11 +178,8 @@ planning_agent = AssistantAgent(
 )
 
 
-
-
-def make_slot_picker_agent() -> AssistantAgent:
-    return AssistantAgent(
-        name="slot_picker_agent",
+booking_agent= AssistantAgent(
+        name="booking_agent",
         model_client=client,
         tools=[],
         system_message="""
@@ -244,7 +258,7 @@ async def parse_plan(raw_plan: str) -> tuple[list[dict], int]:
 
     total_cost = 0
     
-    db = await get_additive_manufacturing_equipment()
+    db = await get_equipment()
 
     for s in steps:
         hourly_rate = get_tool_cost(s['tool'], db)
@@ -288,7 +302,7 @@ def rebuild_plan_text(steps: list[dict]) -> str:
 async def format_plan_with_cost(steps: list[dict]) -> str:
     lines = []
     total = 0
-    db = await get_additive_manufacturing_equipment()
+    db = await get_equipment()
 
     for s in steps:
         tool     = s.get('tool', '')
@@ -333,7 +347,7 @@ async def planning_phase(user_request: str) -> tuple[str, list[dict], int]:
     Generate plan, allow duration edits, loop until APPROVED.
     Returns (plan_text, steps, total_cost).
     """
-    db = await get_additive_manufacturing_equipment()
+    db = await get_equipment()
 
     task  = user_request
     steps = []
@@ -462,7 +476,7 @@ async def booking_phase(
         print(f"\n{'='*60}")
         print(f"Booking — {step}: {tool}  ({duration}h)")
 
-        # Resolve file and sheet directly in Python — no agent needed
+        
         match = find_file_and_sheet(tool, files)
         if not match:
             print(f"[ERROR] Could not match '{tool}' to any Excel sheet — skipping.")
@@ -501,7 +515,7 @@ async def booking_phase(
                 f"Available {duration}-hour slots for '{tool}':  \n{slots_raw}\n\n"
                 f"{pref_clause}"
             )
-            pick_result = await run_agent(make_slot_picker_agent(), pick_task)
+            pick_result = await run_agent(booking_agent, pick_task)
             parsed = parse_slot_result(pick_result)
 
             if not parsed:
@@ -565,7 +579,7 @@ async def booking_phase(
 
 async def run_user_session(username: str) -> None:
 
-    hour = datetime.datetime.now().hour
+    hour = datetime.now().hour
 
     if 5 <= hour < 12:
         print(f"\n=== Good morning, {username}! ===\n")
@@ -576,7 +590,7 @@ async def run_user_session(username: str) -> None:
 
 
 
-    user_request = input("What would you like me to plan? ").strip()
+    user_request = input("What would you like me to plan? \n").strip()
 
     print("\n" + "="*60)
     print("\n--- Generating Plan ---")
@@ -627,4 +641,9 @@ async def main() -> None:
         await run_user_session(user)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Execution has been Cancelled.")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
