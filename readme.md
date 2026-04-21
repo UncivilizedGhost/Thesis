@@ -5,7 +5,7 @@ This repository contains an autonomous booking agent designed to streamline work
 
 
 
-## 📋 Prerequisites
+## Prerequisites
 
 * **Python:** 3.12.7
 * **API Access:** A Google Gemini API Key. You can obtain one at [Google AI Studio](https://aistudio.google.com/app/apikey).
@@ -52,6 +52,6 @@ python app.py
 
 
 
-### 📝 Note on Contribution
+### Note on Contribution
 This project was developed as part of a thesis exploring how AI Agents can be utilized in produciton engineering.
 For academic queires, please contact me
