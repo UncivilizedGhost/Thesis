@@ -26,32 +26,8 @@ client = OpenAIChatCompletionClient(  #Main client
 )
 
 
-# client = OpenAIChatCompletionClient(  
-#     model="gpt-5.4",
-#     api_key=os.environ['OPEN_API_KEY'], 
-#     model_info=ModelInfo(
-#         vision=False,
-#         function_calling=True,
-#         json_output=True,
-#         family="gpt-5.4",
-#         structured_output=False 
-#     )
-# )
-
-
-
-
-#TODO Make out commented out clients that use different models for easy testing later
-
-
-
-
-
-
-
-
-
-
+ 
+ 
 
 validator_agent = AssistantAgent(
     name="validator_agent",
@@ -100,12 +76,7 @@ async def validated_input(prompt: str, rules: str) -> str:
 
 
 
-
-
-
-
-
-
+ 
 
 # Admin agent and function
 
@@ -287,11 +258,11 @@ def parse_slot_result(slot_result: str) -> tuple[str, str, str] | None:
 def rebuild_plan_text(steps: list[dict]) -> str:
     lines = []
     for s in steps:
-        step     = s.get('step','')
-        tool     = s.get('tool','')
-        action   = s.get('action','')
+        step = s.get('step','')
+        tool = s.get('tool','')
+        action = s.get('action','')
         duration = s.get('duration_hours', 0)
-        booking  = "Yes" if s.get('requires_booking') else "No"
+        booking = "Yes" if s.get('requires_booking') else "No"
 
         lines.append(
             f"{step}: {tool}\n{action}\n"
@@ -305,15 +276,15 @@ async def format_plan_with_cost(steps: list[dict]) -> str:
     db = await get_equipment()
 
     for s in steps:
-        tool     = s.get('tool', '')
-        step     = s.get('step', '')
+        tool = s.get('tool', '')
+        step = s.get('step', '')
         duration = s.get('duration_hours', 0)
-        cost     = s.get('cost', 0)
-        action   = s.get('action', '')
+        cost = s.get('cost', 0)
+        action = s.get('action', '')
 
-        hourly     = get_tool_cost(tool, db)
-        cost_str   = f"@ €{hourly}/h = €{cost}" if cost > 0 else "(free)"
-        booking    = " [BOOKING REQUIRED]" if s.get('requires_booking') else ""
+        hourly = get_tool_cost(tool, db)
+        cost_str = f"@ €{hourly}/h = €{cost}" if cost > 0 else "(free)"
+        booking = " [BOOKING REQUIRED]" if s.get('requires_booking') else ""
         action_str = f" {action}" if action else ""
 
         lines.append(f"  {step}: {tool} — {duration}h {cost_str}{booking}\n{action_str}\n")
@@ -328,7 +299,7 @@ async def run_agent(agent: AssistantAgent, task: str) -> str:
     result = await agent.run(task=task)
 
     for msg in reversed(result.messages):
-        # Skip the user prompt and any non-string or empty content
+
         if getattr(msg, 'source', '') == 'user':
             continue
         if isinstance(msg.content, str) and msg.content.strip():
@@ -521,7 +492,7 @@ async def booking_phase(
             if not parsed:
                 print(f"\nCould not select a slot for {tool}.")
                 print("Options:  SKIP  |  CANCEL  |  <new preference to retry>")
-#                choice = input("Choice: ").strip()
+                choice = input("Choice: ").strip()
                 choice=await validated_input(
                                 prompt="Choice: ",
                                 rules="must be related to a timing preference for booing or skip or cancel. Reject anything unrelated")

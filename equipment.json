@@ -1,86 +1,74 @@
 {
     "printers": [
         {
-            "requires_booking": true,
             "description": "Extrudes thermoplastics layer by layer.",
-            "name": "FDM 3D Printer",
-            "cost": 40
+            "cost": 10,
+            "requires_booking": true,
+            "name": "FDM 3D Printer"
         },
         {
             "description": "UV laser cures liquid resin into solid parts.",
             "requires_booking": true,
-            "cost": 40,
+            "cost": 15,
             "name": "SLA 3D Printer"
         },
         {
             "name": "Metal 3D Printer (DMLS)",
-            "cost": 40,
+            "cost": 50,
             "requires_booking": true,
             "description": "Laser sinters metal powder for metal parts."
-        },
-        {
-            "cost": 40,
-            "name": "bamboo printer",
-            "description": "capable of printing in pla",
-            "requires_booking": true
-        },
-        {
-            "name": "2D Laser Jet Printer",
-            "description": "Prints high-resolution two-dimensional documents on various paper sizes.",
-            "requires_booking": false,
-            "cost": 0
-        }
-    ],
-    "post_processing": [
-        {
-            "requires_booking": false,
-            "description": "Pliers and snips for supports.",
-            "name": "Support Removal Tools",
-            "cost": 0
-        },
-        {
-            "cost": 0,
-            "name": "Sanding & Polishing Tools",
-            "description": "Surface finishing tools.",
-            "requires_booking": false
-        },
-        {
-            "cost": 5,
-            "name": "UV Curing Station",
-            "description": "Post-cures resin prints.",
-            "requires_booking": true
-        },
-        {
-            "name": "Paints and Coating",
-            "cost": 0,
-            "requires_booking": false,
-            "description": "Airbrush and spray finishing."
         }
     ],
     "quality": [
         {
-            "requires_booking": false,
             "description": "Dimensional measurement.",
             "name": "Calipers",
-            "cost": 0
+            "cost": 0,
+            "requires_booking": false
         },
         {
-            "cost": 0,
-            "name": "Micrometers",
             "description": "High-precision measurement.",
+            "cost": 0,
+            "requires_booking": false,
+            "name": "Micrometers"
+        },
+        {
+            "description": "Geometry verification.",
+            "name": "3D Scanner",
+            "requires_booking": true,
+            "cost": 5
+        },
+        {
+            "description": "Surface quality measurement.",
+            "cost": 0,
+            "requires_booking": true,
+            "name": "Surface Roughness Tester"
+        }
+    ],
+    "post_processing": [
+        {
+            "description": "Pliers and snips for supports.",
+            "cost": 0,
+            "requires_booking": false,
+            "name": "Support Removal Tools"
+        },
+        {
+            "description": "Surface finishing tools.",
+            "name": "Sanding & Polishing Tools",
+            "cost": 0,
             "requires_booking": false
         },
         {
             "cost": 5,
-            "name": "3D Scanner",
-            "description": "Geometry verification.",
-            "requires_booking": true
+            "requires_booking": true,
+            "name": "UV Curing Station",
+            "description": "Post-cures resin prints."
         },
         {
-            "description": "Surface quality measurement.",
-            "requires_booking": true,
             "cost": 0,
-            "name": "Surface Roughness Tester"
+            "requires_booking": false,
+            "name": "Paints and Coating",
+            "description": "Airbrush and spray finishing."
         }
     ],
     "design": [
@@ -91,35 +79,34 @@
             "name": "SolidWorks"
         },
         {
-            "requires_booking": false,
             "description": "Cloud-based CAD/CAM platform.",
-            "name": "Fusion 360",
-            "cost": 0
+            "requires_booking": false,
+            "cost": 0,
+            "name": "Fusion 360"
         },
         {
             "name": "AutoCAD",
-            "cost": 0,
             "requires_booking": false,
+            "cost": 0,
             "description": "2D and 3D drafting software."
         },
         {
+            "cost": 0,
             "requires_booking": false,
-            "description": "Slicing software, exports G-code.",
             "name": "Cura",
-            "cost": 0
+            "description": "Slicing software, exports G-code."
         },
         {
             "cost": 0,
+            "requires_booking": false,
             "name": "PrusaSlicer",
-            "description": "Advanced slicing software.",
-            "requires_booking": false
+            "description": "Advanced slicing software."
         },
         {
             "description": "Formlabs SLA preparation software.",
-            "requires_booking": false,
+            "name": "PreForm",
             "cost": 0,
-            "name": "PreForm"
+            "requires_booking": false
         }
-    ],
-    "3d printer": []
+    ]
 }
