@@ -3,14 +3,14 @@
 
 This repository contains an autonomous booking agent designed to streamline workshop scheduling. The system uses the AutoGen framework and Google Gemini 2.5 Flash to handle natural language requests and task execution.
 
----
+
 
 ## 📋 Prerequisites
 
 * **Python:** 3.12.7
 * **API Access:** A Google Gemini API Key. You can obtain one at [Google AI Studio](https://aistudio.google.com/app/apikey).
 
----
+
 
 ## Installation & Setup
 
@@ -40,7 +40,7 @@ GOOGLE_API_KEY=your_actual_api_key_here
 PASSWORD=ef92b778ba94c0334... (your hashed string)
 ```
 
----
+
 
 ## Running the Application
 
@@ -50,7 +50,6 @@ Once the dependencies are installed and the `.env` file is configured, launch th
 python app.py
 ```
 
----
 
 
 
